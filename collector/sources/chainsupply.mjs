@@ -58,6 +58,11 @@ async function tokenTotal(p) {
 }
 
 const METHODS = {
+  async celestia(r) {
+    const circulating = Number(await (await fetch(r.endpoint)).text());
+    const total = Number(await (await fetch(r.totalEndpoint)).text());
+    return { circulating, total, src: r.endpoint, excluded: [] };
+  },
   // Read /thorchain/supply from THORNode through Liquify's public gateway. THORChain excludes
   // only the protocol reserve from circulation, so bonded RUNE and RUNE in liquidity pools count.
   async thorchain() {
