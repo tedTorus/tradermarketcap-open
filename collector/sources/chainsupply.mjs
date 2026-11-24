@@ -58,6 +58,23 @@ async function tokenTotal(p) {
 }
 
 const METHODS = {
+  async avalanche(r) {
+    const req = (method) => getJSON(r.rpc, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method })
+    });
+    const supplyRes = await req('platform.getCurrentSupply');
+    const stakeRes = await req('platform.getTotalStake');
+    const total = Number(supplyRes.result.supply) / 1e9;
+    const staked = Number(stakeRes.result.stake) / 1e9;
+    return { 
+      circulating: total - staked, 
+      total, 
+      src: r.rpc, 
+      excluded: [{ reason: 'Locked P-Chain Stake', amount: staked }] 
+    };
+  },
   // Read /thorchain/supply from THORNode through Liquify's public gateway. THORChain excludes
   // only the protocol reserve from circulation, so bonded RUNE and RUNE in liquidity pools count.
   async thorchain() {

@@ -621,3 +621,23 @@ test('aptos: totals read moments apart (a few thousand APT) still agree', async 
   const s = await readSupply({ method: 'aptos' });
   assert.ok(Math.abs(s.circulating - 889397967.12) < 1e-4);
 });
+
+
+test('avalanche: subtracts P-Chain stake from total supply', async () => {
+  const prevFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    const body = JSON.parse(opts.body);
+    if (body.method === 'platform.getCurrentSupply') return new Response(JSON.stringify({ result: { supply: '400000000000000000' } }));
+    if (body.method === 'platform.getTotalStake') return new Response(JSON.stringify({ result: { stake: '250000000000000000' } }));
+  };
+  try {
+    const { readSupply } = await import('../collector/sources/chainsupply.mjs');
+    const s = await readSupply({ method: 'avalanche', rpc: 'mock' });
+    import('assert').then(assert => {
+      assert.equal(s.total, 400000000);
+      assert.equal(s.circulating, 150000000);
+    });
+  } finally {
+    globalThis.fetch = prevFetch;
+  }
+});
